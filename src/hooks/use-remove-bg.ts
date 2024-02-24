@@ -2,6 +2,7 @@
 
 import imglyRemoveBackground, { Config } from '@imgly/background-removal';
 import { useState } from 'react';
+import { useCountdown } from 'usehooks-ts';
 
 const config: Config = {
   fetchArgs: {
@@ -24,43 +25,26 @@ interface State {
 }
 
 export const useRemoveBg = () => {
-  const [state, setState] = useState<State>();
   const [isLoading, setIsLoading] = useState(false);
+  const [key, setKey] = useState('');
 
   const remove = async (image: File) => {
     setIsLoading(true);
     const res = await imglyRemoveBackground(image, {
       ...config,
-      process: (key: string, current: number, total: number, unk: any) => {
-        console.log(`Downloading ${key}: ${current} of ${total} =>`, unk);
-        setState((prev) => ({
-          ...prev,
-          current,
-          total,
-          step: key.includes('models')
-            ? 'upload'
-            : key.includes('compute')
-            ? 'download'
-            : 'remove',
-        }));
-        setIsLoading(false);
+      process: (key: string) => {
+        setKey(key);
+        console.log(key);
       },
     });
 
+    setIsLoading(false);
     return res;
   };
 
   return {
-    state: {
-      step: state?.step,
-      curent: state?.current,
-      total: state?.total,
-      avg:
-        state?.current && state.total
-          ? (state?.current / state?.total) * 100
-          : 0,
-    },
     remove,
     isLoading,
+    key,
   };
 };
